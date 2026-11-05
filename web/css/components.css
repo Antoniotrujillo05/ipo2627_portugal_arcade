@@ -1,0 +1,472 @@
+/* ==========================================================================
+   components.css — Componentes con selectores BEM (jerarquía plana)
+   Todos los selectores son clases: mismo nivel de especificidad y sin
+   subelementos (block__elemento__subelemento no se admite).
+   ========================================================================== */
+
+/* --- Marca y cabecera ---------------------------------------------------- */
+
+.cabecera__titulo {
+  font-size: var(--fs-titulo);
+  text-transform: uppercase;
+}
+
+/* --- Botones ------------------------------------------------------------- */
+
+.boton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--esp-2);
+  padding: var(--esp-3) var(--esp-5);
+  border: var(--grosor-borde) solid var(--color-borde);
+  border-radius: var(--radio);
+  background: var(--color-superficie-alta);
+  color: var(--color-texto);
+  font-family: var(--font-display);
+  font-size: var(--fs-2);
+  letter-spacing: var(--tracking);
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background var(--transicion), border-color var(--transicion),
+    transform var(--transicion);
+}
+
+.boton:hover {
+  border-color: var(--color-acento);
+  background: var(--color-acento-fondo);
+}
+
+.boton:active {
+  transform: translateY(1px);
+}
+
+.boton--primario {
+  border-color: var(--color-acento);
+  background: var(--color-acento);
+  color: hsl(265 45% 6%);
+  font-weight: var(--peso-negrita);
+}
+
+.boton--primario:hover {
+  background: var(--color-acento-tenue);
+}
+
+.boton--peligro {
+  border-color: var(--color-peligro);
+  background: var(--color-peligro-fondo);
+  color: var(--color-peligro);
+}
+
+.boton--peligro:hover {
+  border-color: var(--color-peligro);
+  background: var(--color-peligro);
+  color: hsl(265 45% 6%);
+}
+
+/* --- Teclas (kbd) -------------------------------------------------------- */
+
+.tecla {
+  display: inline-block;
+  padding: 0 var(--esp-1);
+  border: var(--grosor-borde) solid var(--color-borde);
+  border-radius: var(--radio);
+  background: var(--color-superficie);
+  font-size: var(--fs-0);
+  color: var(--color-acento-tenue);
+}
+
+/* --- HUD (indicador de progreso) ----------------------------------------
+   Rejilla: en la columna estrecha se apila en vertical (una fila por dato),
+   de modo que mostrar u ocultar un dato (p. ej. el escudo) sólo desplaza
+   elementos dentro del panel y nunca aumenta el alto de la página. */
+
+.hud {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
+  align-content: space-between;
+  gap: var(--esp-3) var(--esp-4);
+  width: 100%;
+  min-width: 0;
+  padding: var(--esp-4);
+  border: var(--grosor-borde) solid var(--color-borde);
+  border-radius: var(--radio);
+  background: var(--color-superficie);
+}
+
+.hud__item {
+  display: grid;
+  gap: var(--esp-1);
+}
+
+.hud__etiqueta {
+  font-size: var(--fs-0);
+  letter-spacing: var(--tracking);
+  text-transform: uppercase;
+  color: var(--color-texto-tenue);
+}
+
+.hud__valor {
+  font-family: var(--font-display);
+  font-size: var(--fs-hud);
+  font-weight: var(--peso-negrita);
+  color: var(--color-acento);
+}
+
+.hud__valor--vidas {
+  color: var(--color-peligro);
+  letter-spacing: 0.15em;
+}
+
+.hud__valor--escudo {
+  color: var(--color-info);
+}
+
+.hud__valor--restantes {
+  font-size: var(--fs-5);
+  line-height: var(--lh-corto);
+  color: var(--color-info);
+}
+
+.hud__progreso {
+  display: grid;
+  grid-column: 1 / -1; /* la barra ocupa siempre el ancho completo */
+  gap: var(--esp-1);
+  min-width: 0;
+}
+
+.hud__barra {
+  height: 0.8rem;
+  border: var(--grosor-borde) solid var(--color-borde);
+  border-radius: 999px;
+  background: var(--color-fondo);
+  overflow: hidden;
+}
+
+.hud__relleno {
+  display: block;
+  width: 0%;
+  height: 100%;
+  background: linear-gradient(90deg, var(--color-acento), var(--color-info));
+  transition: width var(--transicion);
+}
+
+.hud__nota {
+  grid-column: 1 / -1;
+  font-size: var(--fs-0);
+  line-height: var(--lh-normal);
+  color: var(--color-texto-tenue);
+}
+
+/* --- Lienzo y capas superpuestas ----------------------------------------- */
+
+.juego__crt {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(
+      to bottom,
+      hsl(265 45% 6% / 0.18) 0 2px,
+      transparent 2px 4px
+    ),
+    radial-gradient(120% 100% at 50% 50%, transparent 55%, hsl(265 60% 3% / 0.55));
+}
+
+.juego__mensaje {
+  position: absolute;
+  left: 50%;
+  top: 12%;
+  translate: -50% 0;
+  padding: var(--esp-3) var(--esp-5);
+  border: var(--grosor-borde) solid var(--color-acento);
+  border-radius: var(--radio);
+  background: hsl(265 45% 6% / 0.96);
+  box-shadow: 0 0.5rem 1.5rem var(--color-sombra);
+  font-family: var(--font-display);
+  font-size: var(--fs-3);
+  font-weight: var(--peso-negrita);
+  letter-spacing: var(--tracking);
+  text-align: center;
+  text-transform: uppercase;
+  color: var(--color-acento);
+  opacity: 0;
+  transition: opacity var(--transicion);
+  pointer-events: none;
+  z-index: 2;
+}
+
+.juego__mensaje.is-visible {
+  opacity: 1;
+}
+
+.juego__capa {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: var(--esp-4);
+  background: hsl(265 45% 6% / 0.82);
+}
+
+/* --- Panel (capas de menú, pausa y fin) ---------------------------------- */
+
+.panel__hoja {
+  display: grid;
+  gap: var(--esp-4);
+  width: min(100%, 25rem);
+  padding: var(--esp-6) var(--esp-5);
+  border: var(--grosor-borde) solid var(--color-borde);
+  border-radius: var(--radio-grande);
+  background: var(--color-superficie);
+  box-shadow: 0 1rem 2.5rem var(--color-sombra);
+  text-align: center;
+  justify-items: center;
+}
+
+.panel__sobretitulo {
+  font-family: var(--font-display);
+  font-size: var(--fs-0);
+  letter-spacing: var(--tracking);
+  text-transform: uppercase;
+  color: var(--color-info);
+}
+
+.panel__titulo {
+  font-size: var(--fs-4);
+  text-transform: uppercase;
+}
+
+.panel__texto {
+  color: var(--color-texto-tenue);
+  font-size: var(--fs-1);
+}
+
+.panel__nota {
+  font-size: var(--fs-0);
+  color: var(--color-texto-tenue);
+}
+
+.panel__acciones {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--esp-2);
+}
+
+.panel__campo {
+  display: grid;
+  gap: var(--esp-1);
+  width: 100%;
+}
+
+.panel__resumen {
+  display: grid;
+  gap: var(--esp-2);
+  width: 100%;
+}
+
+.resumen__par {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--esp-3);
+  padding-bottom: var(--esp-1);
+  border-bottom: 1px dashed var(--color-borde);
+}
+
+.resumen__par dt {
+  color: var(--color-texto-tenue);
+  font-size: var(--fs-1);
+}
+
+.resumen__par dd {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: var(--peso-negrita);
+  color: var(--color-acento);
+}
+
+.panel__aviso {
+  padding: var(--esp-1) var(--esp-3);
+  border-radius: var(--radio);
+  background: var(--color-acento-fondo);
+  font-family: var(--font-display);
+  font-size: var(--fs-1);
+  color: var(--color-acento);
+  text-transform: uppercase;
+}
+
+/* --- Campos de formulario ------------------------------------------------ */
+
+.campo__etiqueta {
+  font-size: var(--fs-0);
+  letter-spacing: var(--tracking);
+  text-transform: uppercase;
+  color: var(--color-texto-tenue);
+}
+
+.campo__control {
+  width: 100%;
+  padding: var(--esp-3) var(--esp-4);
+  border: var(--grosor-borde) solid var(--color-borde);
+  border-radius: var(--radio);
+  background: var(--color-superficie-alta);
+  font-size: var(--fs-2);
+  cursor: pointer;
+}
+
+.campo__control:hover {
+  border-color: var(--color-acento);
+}
+
+/* --- Barra lateral ------------------------------------------------------- */
+
+.barra-lateral__seccion {
+  display: grid;
+  gap: var(--esp-2);
+  padding: var(--esp-4);
+  border: var(--grosor-borde) solid var(--color-borde);
+  border-radius: var(--radio);
+  background: var(--color-superficie);
+}
+
+.barra-lateral__titulo {
+  font-size: var(--fs-3);
+  text-transform: uppercase;
+  color: var(--color-acento);
+}
+
+.barra-lateral__nota {
+  font-size: var(--fs-0);
+  color: var(--color-texto-tenue);
+}
+
+.controles {
+  display: grid;
+  gap: var(--esp-2);
+}
+
+.controles__par {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--esp-2);
+}
+
+.controles__par dt {
+  color: var(--color-texto-tenue);
+  font-size: var(--fs-1);
+}
+
+.controles__par dd {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--esp-1);
+}
+
+.controles__alternativa {
+  color: var(--color-texto-tenue);
+  font-size: var(--fs-0);
+}
+
+/* --- Modal de ayuda (dialog) -------------------------------------------- */
+
+.modal {
+  /* El reset global (* { margin: 0 }) anula el margin: auto del user agent,
+     por lo que se recupera aquí para que el diálogo modal quede centrado */
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  width: min(44rem, calc(100% - 2rem));
+  max-height: min(85dvh, 48rem);
+  padding: 0;
+  border: var(--grosor-borde) solid var(--color-borde);
+  border-radius: var(--radio-grande);
+  background: transparent;
+  color: var(--color-texto);
+  overflow: hidden;
+}
+
+.modal::backdrop {
+  background: hsl(265 60% 3% / 0.78);
+}
+
+.modal__hoja {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: var(--esp-4);
+  max-height: inherit;
+  padding: var(--esp-6) var(--esp-5);
+  background: var(--color-superficie);
+  overflow: auto;
+}
+
+.modal__titulo {
+  font-size: var(--fs-4);
+  text-transform: uppercase;
+  color: var(--color-acento);
+}
+
+.modal__cuerpo {
+  display: grid;
+  gap: var(--esp-4);
+}
+
+.modal__seccion {
+  display: grid;
+  gap: var(--esp-2);
+}
+
+.modal__subtitulo {
+  font-size: var(--fs-2);
+  color: var(--color-info);
+  text-transform: uppercase;
+}
+
+.modal__seccion p,
+.modal__lista {
+  font-size: var(--fs-1);
+  color: var(--color-texto-tenue);
+}
+
+.modal__lista {
+  display: grid;
+  gap: var(--esp-1);
+}
+
+.modal__tabla {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-1);
+}
+
+.modal__tabla th,
+.modal__tabla td {
+  padding: var(--esp-1) var(--esp-2);
+  border-bottom: 1px dashed var(--color-borde);
+  text-align: left;
+}
+
+.modal__tabla th {
+  font-family: var(--font-display);
+  color: var(--color-acento);
+}
+
+.modal__tabla td:last-child {
+  font-family: var(--font-display);
+  color: var(--color-texto);
+}
+
+.modal__acciones {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.destacado {
+  font-family: var(--font-display);
+}
+
+.destacado--escudo { color: var(--color-info); }
+.destacado--rafaga { color: var(--color-acento); }
+.destacado--vida { color: var(--color-peligro); }

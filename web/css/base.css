@@ -1,0 +1,112 @@
+/* ==========================================================================
+   base.css — Reset, elementos raíz y utilidades
+   Regla reset básica para unificar el diseño entre navegadores.
+   ========================================================================== */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+* {
+  margin: 0;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  min-height: 100dvh;
+  background:
+    radial-gradient(120% 80% at 50% -10%, var(--color-fondo-degradado), transparent 60%),
+    var(--color-fondo);
+  color: var(--color-texto);
+  font-family: var(--font-texto);
+  font-size: var(--fs-2);
+  line-height: var(--lh-normal);
+}
+
+h1, h2, h3 {
+  font-family: var(--font-display);
+  font-weight: var(--peso-negrita);
+  line-height: var(--lh-corto);
+  letter-spacing: var(--tracking);
+}
+
+p {
+  max-width: 65ch; /* ≈ 60 caracteres por línea (recomendación tipográfica) */
+}
+
+ul {
+  padding-inline-start: var(--esp-5);
+}
+
+a {
+  color: var(--color-acento);
+}
+
+button,
+select,
+input {
+  font: inherit;
+  color: inherit;
+}
+
+canvas {
+  display: block;
+  max-width: 100%;
+}
+
+kbd {
+  font-family: var(--font-display);
+}
+
+[hidden] {
+  display: none !important;
+}
+
+::selection {
+  background: var(--color-acento);
+  color: var(--color-fondo);
+}
+
+/* Foco visible siempre (usabilidad y accesibilidad) */
+:focus-visible {
+  outline: 3px solid var(--color-acento);
+  outline-offset: 2px;
+}
+
+/* Utilidad para texto accesible sólo para lectores de pantalla */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.aviso-noscript {
+  margin: var(--esp-5) auto;
+  padding: var(--esp-4);
+  max-width: 30rem;
+  border: var(--grosor-borde) solid var(--color-peligro);
+  border-radius: var(--radio);
+  background: var(--color-peligro-fondo);
+  text-align: center;
+}
+
+/* Respeta la preferencia del usuario de reducir el movimiento */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
