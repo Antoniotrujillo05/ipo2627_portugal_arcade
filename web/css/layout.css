@@ -9,7 +9,7 @@
 .app {
   display: grid;
   grid-template-rows: auto 1fr;
-  gap: var(--esp-5);
+  gap: var(--esp-4);
   min-height: 100dvh;
   max-width: var(--ancho-app);
   margin-inline: auto;
@@ -33,14 +33,15 @@
 
 /* Contenido: marcador | juego | apoyo en pantallas anchas (3D),
    y todo apilado en pantallas estrechas (1D).
-   align-content centra el bloque en el alto disponible para que el espacio
-   que dejó libre el pie de página se reparta por arriba y por abajo. ---- */
+   align-content alinea el bloque arriba, pegado a la cabecera, para que el
+   espacio sobrante de pantallas altas se reparta abajo y no se abra un
+   hueco excesivo entre la cabecera y el juego. ------------------------- */
 .contenido {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: var(--esp-5);
   align-items: stretch;
-  align-content: center;
+  align-content: start;
 }
 
 @media (min-width: 64rem) {
