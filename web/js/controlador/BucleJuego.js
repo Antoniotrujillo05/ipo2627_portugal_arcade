@@ -1,9 +1,13 @@
 /* ==========================================================================
-   GameLoop.js — Bucle principal del juego
-   Centraliza el juego en un único ciclo requestAnimationFrame:
-   actualizar (estado y movimiento) → renderizar (vista) → sincronizar UI.
-   Se usa requestAnimationFrame en lugar de setInterval/setTimeout porque
-   sincroniza el ciclo con el refresco del monitor (~60 fps).
+   BucleJuego.js — Bucle principal del juego
+   QUÉ ES: el motor del tiempo: ~60 veces por segundo actualiza el juego y
+   redibuja la pantalla, sincronizado con el refresco del monitor. Se usa
+   requestAnimationFrame (no setInterval) por esa sincronización.
+   CONTIENE: · arranque · paso (dt acotado)
+   DÓNDE TOCAR:
+     · Cambiar la "velocidad" del tiempo → el límite de dt en _paso (0.05 s).
+     · Añadir algo que ocurra cada fotograma → los callbacks actualizar y
+       renderizar que recibe desde ControladorPartida.
    ========================================================================== */
 
 (function (Arcade) {

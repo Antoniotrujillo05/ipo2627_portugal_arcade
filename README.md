@@ -56,3 +56,63 @@ La implementación de la interacción estará guiada para favorecer la usabilida
   - diseño cromático: monocromático, triádico, complementario, etc.
   - diseño tipográfico: dos fuentes contrastadas, una única fuente con niveles distintos de realce, etc.
   - diseño espacial: selección de unidades de medida y contenedores, principios de diseño `Gestalt`, etc. 
+
+# Estructura de la solución
+
+```
+web/
+├── index.html                  Página semántica (HTML moderno y accesible)
+├── css/
+│   ├── tokens.css              Diseño cromático, tipográfico y espacial (:root)
+│   ├── base.css                Reset y estilos por etiqueta (estrategia "etiquetas primero")
+│   ├── layout.css              Composición de la página (grid 2D / flex 1D)
+│   └── components.css          Componentes y variantes (clases)
+└── js/
+    ├── constantes.js           Constantes compartidas (única fuente de verdad)
+    ├── modelo/                 Modelo: datos y reglas (sin DOM)
+    │   ├── Juego.js            Estado de la partida, actualización, colisiones y puntuación
+    │   ├── Entidades.js        Nave, proyectiles, enemigos, barreras, ovni y efectos
+    │   ├── Fisica.js           Colisiones AABB y cálculo de movimiento
+    │   └── Ajustes.js          Parámetros ajustables (dificultad)
+    ├── vista/                  Vista: presentación e interacción (sólo lectura)
+    │   ├── RenderizadorLienzo.js  Dibujo de la escena con Canvas API 2D
+    │   └── VistaUi.js          HUD, capas, mensajes y ajustes en el DOM
+    ├── controlador/            Controlador: intermediario
+    │   ├── ControladorPartida.js  Traduce peticiones en acciones y entrega el resultado a las vistas
+    │   ├── ControladorEntrada.js  Teclado → comandos e intención de movimiento
+    │   └── BucleJuego.js       Bucle principal (requestAnimationFrame)
+    └── main.js                 Punto de entrada: compone el MVC y arranca
+```
+
+Las vistas nunca consultan ni mutan el modelo, ni siquiera lo importan: sólo
+dependen de `constantes.js` (vocabulario compartido). El modelo expone las
+proyecciones de solo lectura `obtenerEstado()` (interfaz) y `obtenerEscena()`
+(lienzo), y es el controlador quien se las entrega en cada fotograma.
+
+# Cómo se lee el código
+
+1. `main.js` crea las piezas y las conecta (no hay lógica ahí).
+2. El usuario pulsa un botón o una tecla → la vista o el teclado avisan al
+   `ControladorPartida` con un comando.
+3. El controlador traduce ese comando en una acción sobre el modelo (`Juego`).
+4. Cada fotograma, `BucleJuego` pide al modelo actualizar su estado y luego el
+   controlador reparte el resultado: `obtenerEscena()` al canvas y
+   `obtenerEstado()` al HUD.
+
+Todos los ficheros empiezan con una cabecera que dice qué es, qué contiene y
+dónde tocar para los cambios habituales de ese fichero.
+
+# Recetas de extensión (dónde tocar)
+
+| Quiero… | Dónde toco |
+|---|---|
+| Cambiar puntos, vidas, velocidades o tamaños | `js/constantes.js` |
+| Añadir una dificultad | `DIFICULTADES` en `js/constantes.js` (los selectores se actualizan solos) |
+| Mapear una tecla nueva | `COMANDOS_TECLA` en `js/controlador/ControladorEntrada.js` |
+| Añadir un comando o un botón nuevo | `data-comando` en `web/index.html` + `case` en `ControladorPartida.manejarComando` |
+| Añadir un tipo de potenciador | `POTENCIADOR.tipos` en `constantes.js` + `Juego._recogerPotenciador` + colores/letras en `RenderizadorLienzo._dibujarPotenciadores` + la ayuda |
+| Añadir una entidad nueva | clase en `Entidades.js` → crear/actualizar/colisionar en `Juego.js` → `obtenerEscena()` → `_dibujarX()` en `RenderizadorLienzo.js` |
+| Añadir un dato al HUD | `id` en `index.html` + `VistaUi.els` + escribirlo en `VistaUi.sincronizar` |
+| Cambiar colores, fuentes o espaciado | `css/tokens.css` |
+| Cambiar la disposición de la página | `css/layout.css` |
+| Cambiar el aspecto de un componente | `css/components.css` |

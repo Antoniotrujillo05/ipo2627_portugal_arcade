@@ -1,8 +1,13 @@
 /* ==========================================================================
-   InputController.js — Controlador de entrada
-   Traduce los eventos del teclado en estado de movimiento (que el modelo
-   consulta cada fotograma) y en comandos discretos (pausa, ayuda…).
+   ControladorEntrada.js — Controlador de entrada
+   QUÉ ES: traduce el teclado en dos cosas: comandos discretos (pausa, ayuda…)
+   y la intención de movimiento que consume el modelo cada fotograma.
    Se usa addEventListener; nunca atributos onXXX en el HTML.
+   CONTIENE: · mapa de teclas a comandos · estado de movimiento · filtros
+   DÓNDE TOCAR:
+     · Mapear una tecla nueva a un comando → COMANDOS_TECLA.
+     · Cambiar las teclas de movimiento o disparo → _alPulsar/_alSoltar.
+     · Añadir un comando nuevo → añádelo aquí y su case en ControladorPartida.
    ========================================================================== */
 
 (function (Arcade) {
@@ -21,11 +26,14 @@ const COMANDOS_TECLA = new Map([
 
 class ControladorEntrada {
   /**
-   * @param {{ onComando: (comando: string) => void }} opciones
+   * @param {{ onComando: (comando: string) => void,
+   *          dialogoAbierto: () => boolean }} opciones
+   *        dialogoAbierto informa del estado de la vista de ayuda
    */
-  constructor({ onComando }) {
+  constructor({ onComando, dialogoAbierto }) {
     this.onComando = onComando;
-    this.estado = { izquierda: false, derecha: false, disparo: false };
+    this.dialogoAbierto = dialogoAbierto;
+    this._estado = { izquierda: false, derecha: false, disparo: false };
 
     this._alPulsar = this._alPulsar.bind(this);
     this._alSoltar = this._alSoltar.bind(this);
@@ -36,15 +44,24 @@ class ControladorEntrada {
     window.addEventListener('blur', this._alPerderFoco);
   }
 
+  /** Intención de movimiento para el modelo (traducción del estado de teclado) */
+  get intencion() {
+    return {
+      direccion:
+        (this._estado.derecha ? 1 : 0) - (this._estado.izquierda ? 1 : 0),
+      disparo: this._estado.disparo,
+    };
+  }
+
   /** ¿El evento debe ignorarse por estar en un control nativo? */
-  _ignorar(evento) {
+  _debeIgnorar(evento) {
     const objetivo = evento.target;
     const esElemento = objetivo instanceof Element;
 
-    // Con el diálogo de ayuda abierto sólo se atiende H (cerrar);
-    // Escape lo cierra el propio diálogo de forma nativa.
-    if (document.querySelector('dialog[open]')) {
-      return evento.key !== 'h' && evento.key !== 'H';
+    // Con el diálogo de ayuda abierto sólo se atiende el comando de ayuda
+    // (cerrar); Escape lo cierra el propio diálogo de forma nativa.
+    if (this.dialogoAbierto()) {
+      return COMANDOS_TECLA.get(evento.key) !== 'ayuda';
     }
 
     // Los campos nativos (select…) manejan sus propias teclas
@@ -62,24 +79,25 @@ class ControladorEntrada {
     return false;
   }
 
+  /** Gestor de tecla pulsada: activa movimiento o lanza un comando */
   _alPulsar(evento) {
-    if (this._ignorar(evento)) return;
+    if (this._debeIgnorar(evento)) return;
 
     switch (evento.key) {
       case 'ArrowLeft':
       case 'a':
       case 'A':
-        this.estado.izquierda = true;
+        this._estado.izquierda = true;
         evento.preventDefault();
         return;
       case 'ArrowRight':
       case 'd':
       case 'D':
-        this.estado.derecha = true;
+        this._estado.derecha = true;
         evento.preventDefault();
         return;
       case ' ':
-        this.estado.disparo = true;
+        this._estado.disparo = true;
         evento.preventDefault();
         return;
       default:
@@ -94,20 +112,21 @@ class ControladorEntrada {
     }
   }
 
+  /** Gestor de tecla soltada: desactiva el movimiento correspondiente */
   _alSoltar(evento) {
     switch (evento.key) {
       case 'ArrowLeft':
       case 'a':
       case 'A':
-        this.estado.izquierda = false;
+        this._estado.izquierda = false;
         break;
       case 'ArrowRight':
       case 'd':
       case 'D':
-        this.estado.derecha = false;
+        this._estado.derecha = false;
         break;
       case ' ':
-        this.estado.disparo = false;
+        this._estado.disparo = false;
         break;
       default:
         break;
@@ -119,10 +138,11 @@ class ControladorEntrada {
     this.limpiar();
   }
 
+  /** Suelta todas las teclas (evita movimientos pegados) */
   limpiar() {
-    this.estado.izquierda = false;
-    this.estado.derecha = false;
-    this.estado.disparo = false;
+    this._estado.izquierda = false;
+    this._estado.derecha = false;
+    this._estado.disparo = false;
   }
 }
 

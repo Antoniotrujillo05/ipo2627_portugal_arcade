@@ -14,32 +14,35 @@
 
   <!-- JS nativo con scripts clásicos: defer garantiza la ejecución tras
        parsear el DOM y respeta el orden de dependencias entre ficheros -->
-  <script defer src="js/config.js"></script>
-  <script defer src="js/model/physics.js"></script>
-  <script defer src="js/model/entities.js"></script>
-  <script defer src="js/model/settings.js"></script>
-  <script defer src="js/model/Game.js"></script>
-  <script defer src="js/view/CanvasRenderer.js"></script>
-  <script defer src="js/view/UiView.js"></script>
-  <script defer src="js/controller/InputController.js"></script>
-  <script defer src="js/controller/GameLoop.js"></script>
+  <script defer src="js/constantes.js"></script>
+  <script defer src="js/modelo/Fisica.js"></script>
+  <script defer src="js/modelo/Entidades.js"></script>
+  <script defer src="js/modelo/Ajustes.js"></script>
+  <script defer src="js/modelo/Juego.js"></script>
+  <script defer src="js/vista/RenderizadorLienzo.js"></script>
+  <script defer src="js/vista/VistaUi.js"></script>
+  <script defer src="js/controlador/ControladorEntrada.js"></script>
+  <script defer src="js/controlador/BucleJuego.js"></script>
+  <script defer src="js/controlador/ControladorPartida.js"></script>
   <script defer src="js/main.js"></script>
 </head>
 <body>
   <div class="app">
-    <header class="cabecera">
-      <h1 class="cabecera__titulo">Matamarcianos</h1>
-      <nav class="cabecera__acciones" aria-label="Acciones de partida">
-        <button type="button" class="boton boton--secundario" data-comando="ayuda" id="btn-ayuda">
-          Ayuda <kbd class="tecla">H</kbd>
+    <header>
+      <h1>Matamarcianos</h1>
+      <!-- Los botones llevan data-comando: ControladorPartida traduce ese
+           comando en una acción del juego -->
+      <nav aria-label="Acciones de partida">
+        <button type="button" class="boton" data-comando="ayuda" id="btn-ayuda">
+          Ayuda <kbd>H</kbd>
         </button>
-        <button type="button" class="boton boton--secundario" data-comando="alternar-pausa" id="btn-pausa" hidden>
-          <span id="pausa-texto">Pausa</span> <kbd class="tecla">P</kbd>
+        <button type="button" class="boton" data-comando="alternar-pausa" id="btn-pausa" hidden>
+          <span id="pausa-texto">Pausa</span> <kbd>P</kbd>
         </button>
       </nav>
     </header>
 
-    <main class="contenido">
+    <main>
       <!-- Marcador: columna izquierda; crece hacia abajo sin afectar al resto -->
       <section class="hud" aria-label="Marcador de la partida">
         <div class="hud__item">
@@ -64,7 +67,7 @@
         </div>
         <div class="hud__item">
           <span class="hud__etiqueta">Enemigos restantes</span>
-          <span class="hud__valor hud__valor--restantes" id="hud-restantes">32</span>
+          <span class="hud__valor hud__valor--restantes" id="hud-restantes">—</span>
         </div>
         <div class="hud__progreso">
           <span class="hud__etiqueta">Enemigos eliminados</span>
@@ -72,13 +75,13 @@
             <span class="hud__relleno" id="hud-relleno"></span>
           </div>
         </div>
-        <p class="hud__nota">Cada oleada acelera: cuanto menos enemigos queden, más rápido se moverán.</p>
+        <p class="hud__nota tenue">Cada oleada acelera: cuanto menos enemigos queden, más rápido se moverán.</p>
       </section>
 
       <section class="zona" aria-label="Zona de juego">
         <!-- Lienzo Canvas + capas superpuestas (posicionamiento sólo cuando es necesario) -->
         <div class="juego">
-          <canvas class="juego__lienzo" id="lienzo" width="480" height="640" role="img"
+          <canvas id="lienzo" width="480" height="640" role="img"
                   aria-label="Lienzo del juego: nave espacial, enemigos y barreras.">
             Tu navegador no soporta el elemento canvas. Necesitas un navegador moderno para jugar.
           </canvas>
@@ -87,16 +90,19 @@
           <p class="juego__mensaje" id="mensaje" role="status" aria-live="polite"></p>
 
           <!-- Capa: menú inicial -->
-          <div class="juego__capa panel" id="capa-menu">
+          <div class="juego__capa" id="capa-menu">
             <div class="panel__hoja">
               <p class="panel__sobretitulo">Partida nueva</p>
-              <h2 class="panel__titulo">Matamarcianos</h2>
+              <h2>Matamarcianos</h2>
               <p class="panel__texto">
                 Defiende la línea defensiva: destruye todas las oleadas antes de que alcancen tu nave.
               </p>
-              <div class="panel__campo">
-                <label class="campo__etiqueta" for="dificultad-menu">Dificultad</label>
-                <select class="campo__control" id="dificultad-menu" data-ajuste="dificultad">
+              <!-- Las opciones de dificultad las rellena VistaUi desde
+                   constantes.js (DIFICULTADES); este HTML es el respaldo
+                   cuando no hay JavaScript -->
+              <div class="campo">
+                <label for="dificultad-menu">Dificultad</label>
+                <select id="dificultad-menu" data-ajuste="dificultad">
                   <option value="facil">Fácil · 4 vidas</option>
                   <option value="normal" selected>Normal · 3 vidas</option>
                   <option value="dificil">Difícil · veloz y agresiva</option>
@@ -104,49 +110,49 @@
               </div>
               <div class="panel__acciones">
                 <button type="button" class="boton boton--primario" data-comando="iniciar">Jugar</button>
-                <button type="button" class="boton boton--secundario" data-comando="ayuda">Ayuda</button>
+                <button type="button" class="boton" data-comando="ayuda">Ayuda</button>
               </div>
             </div>
           </div>
 
           <!-- Capa: pausa -->
-          <div class="juego__capa panel" id="capa-pausa" hidden>
+          <div class="juego__capa" id="capa-pausa" hidden>
             <div class="panel__hoja">
               <p class="panel__sobretitulo">Partida en pausa</p>
-              <h2 class="panel__titulo">Pausa</h2>
-              <div class="panel__campo">
-                <label class="campo__etiqueta" for="dificultad-pausa">Dificultad</label>
-                <select class="campo__control" id="dificultad-pausa" data-ajuste="dificultad">
+              <h2>Pausa</h2>
+              <div class="campo">
+                <label for="dificultad-pausa">Dificultad</label>
+                <select id="dificultad-pausa" data-ajuste="dificultad">
                   <option value="facil">Fácil · 4 vidas</option>
                   <option value="normal" selected>Normal · 3 vidas</option>
                   <option value="dificil">Difícil · veloz y agresiva</option>
                 </select>
               </div>
-              <p class="panel__nota">La velocidad y la cadencia enemiga se aplican al instante.</p>
+              <p class="tenue">La velocidad y la cadencia enemiga se aplican al instante.</p>
               <div class="panel__acciones">
                 <button type="button" class="boton boton--primario" data-comando="reanudar">Reanudar</button>
-                <button type="button" class="boton boton--secundario" data-comando="ayuda">Ayuda</button>
+                <button type="button" class="boton" data-comando="ayuda">Ayuda</button>
                 <button type="button" class="boton boton--peligro" data-comando="terminar">Terminar</button>
               </div>
             </div>
           </div>
 
           <!-- Capa: fin de partida -->
-          <div class="juego__capa panel" id="capa-fin" hidden>
+          <div class="juego__capa" id="capa-fin" hidden>
             <div class="panel__hoja">
               <p class="panel__sobretitulo">Fin de la partida</p>
-              <h2 class="panel__titulo" id="fin-titulo">Game Over</h2>
+              <h2 id="fin-titulo">Game Over</h2>
               <p class="panel__texto" id="fin-motivo"></p>
               <dl class="panel__resumen">
-                <div class="resumen__par">
+                <div>
                   <dt>Puntuación</dt>
                   <dd id="fin-puntuacion">0</dd>
                 </div>
-                <div class="resumen__par">
+                <div>
                   <dt>Oleada alcanzada</dt>
                   <dd id="fin-oleada">1</dd>
                 </div>
-                <div class="resumen__par">
+                <div>
                   <dt>Récord</dt>
                   <dd id="fin-record">0</dd>
                 </div>
@@ -154,55 +160,55 @@
               <p class="panel__aviso" id="fin-nuevo-record" hidden>¡Nuevo récord!</p>
               <div class="panel__acciones">
                 <button type="button" class="boton boton--primario" data-comando="reiniciar">Jugar de nuevo</button>
-                <button type="button" class="boton boton--secundario" data-comando="menu">Menú</button>
+                <button type="button" class="boton" data-comando="menu">Menú</button>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      <aside class="barra-lateral" aria-label="Información de apoyo">
-        <section class="barra-lateral__seccion">
-          <h2 class="barra-lateral__titulo">Controles</h2>
-          <dl class="controles">
-            <div class="controles__par">
+      <aside aria-label="Información de apoyo">
+        <section>
+          <h2>Controles</h2>
+          <dl>
+            <div>
               <dt>Mover</dt>
-              <dd><kbd class="tecla">←</kbd> <kbd class="tecla">→</kbd> <span class="controles__alternativa">o</span> <kbd class="tecla">A</kbd> <kbd class="tecla">D</kbd></dd>
+              <dd><kbd>←</kbd> <kbd>→</kbd> <span class="tenue">o</span> <kbd>A</kbd> <kbd>D</kbd></dd>
             </div>
-            <div class="controles__par">
+            <div>
               <dt>Disparar</dt>
-              <dd><kbd class="tecla">Espacio</kbd></dd>
+              <dd><kbd>Espacio</kbd></dd>
             </div>
-            <div class="controles__par">
+            <div>
               <dt>Pausa</dt>
-              <dd><kbd class="tecla">P</kbd> <span class="controles__alternativa">o</span> <kbd class="tecla">Esc</kbd></dd>
+              <dd><kbd>P</kbd> <span class="tenue">o</span> <kbd>Esc</kbd></dd>
             </div>
-            <div class="controles__par">
+            <div>
               <dt>Empezar / reanudar</dt>
-              <dd><kbd class="tecla">Enter</kbd></dd>
+              <dd><kbd>Enter</kbd></dd>
             </div>
-            <div class="controles__par">
+            <div>
               <dt>Reiniciar</dt>
-              <dd><kbd class="tecla">R</kbd></dd>
+              <dd><kbd>R</kbd></dd>
             </div>
-            <div class="controles__par">
+            <div>
               <dt>Ayuda</dt>
-              <dd><kbd class="tecla">H</kbd></dd>
+              <dd><kbd>H</kbd></dd>
             </div>
           </dl>
         </section>
 
-        <section class="barra-lateral__seccion">
-          <h2 class="barra-lateral__titulo">Ajustes</h2>
-          <div class="panel__campo">
-            <label class="campo__etiqueta" for="dificultad-lateral">Dificultad</label>
-            <select class="campo__control" id="dificultad-lateral" data-ajuste="dificultad">
+        <section>
+          <h2>Ajustes</h2>
+          <div class="campo">
+            <label for="dificultad-lateral">Dificultad</label>
+            <select id="dificultad-lateral" data-ajuste="dificultad">
               <option value="facil">Fácil · 4 vidas</option>
               <option value="normal" selected>Normal · 3 vidas</option>
               <option value="dificil">Difícil · veloz y agresiva</option>
             </select>
           </div>
-          <p class="barra-lateral__nota">Las vidas se fijan al iniciar la partida; la velocidad y la cadencia se adaptan en caliente.</p>
+          <p>Las vidas se fijan al iniciar la partida; la velocidad y la cadencia se adaptan en caliente.</p>
         </section>
       </aside>
     </main>
@@ -211,11 +217,11 @@
   <!-- Componente de ayuda: reglas del juego -->
   <dialog class="modal" id="ayuda" aria-labelledby="ayuda-titulo">
     <div class="modal__hoja">
-      <h2 class="modal__titulo" id="ayuda-titulo">Cómo jugar</h2>
+      <h2 id="ayuda-titulo">Cómo jugar</h2>
 
       <div class="modal__cuerpo">
-        <section class="modal__seccion">
-          <h3 class="modal__subtitulo">Objetivo</h3>
+        <section>
+          <h3>Objetivo</h3>
           <p>
             Tu nave está en la parte inferior del lienzo. Dispara a las oleadas de enemigos y
             sobrevive: si un enemigo alcanza la línea de tu nave o pierdes todas tus vidas,
@@ -223,9 +229,11 @@
           </p>
         </section>
 
-        <section class="modal__seccion">
-          <h3 class="modal__subtitulo">Puntuación</h3>
-          <table class="modal__tabla">
+        <section>
+          <h3>Puntuación</h3>
+          <!-- Las filas de puntos las genera VistaUi desde constantes.js;
+               este tbody es el respaldo cuando no hay JavaScript -->
+          <table id="tabla-puntos">
             <thead>
               <tr><th scope="col">Elemento</th><th scope="col">Puntos</th></tr>
             </thead>
@@ -233,16 +241,16 @@
               <tr><td>Calamar (fila superior)</td><td>30</td></tr>
               <tr><td>Cangrejo (filas centrales)</td><td>20</td></tr>
               <tr><td>Pulpo (fila inferior)</td><td>10</td></tr>
-              <tr><td>Ovni rojo (aparece por sorpresa)</td><td>50 · 100 · 150</td></tr>
+              <tr><td>Ovni (aparece por sorpresa)</td><td>50 · 100 · 150</td></tr>
               <tr><td>Oleada superada</td><td>100 × número de oleada</td></tr>
               <tr><td>Potenciador recogido</td><td>25</td></tr>
             </tbody>
           </table>
         </section>
 
-        <section class="modal__seccion">
-          <h3 class="modal__subtitulo">Barreras y potenciadores</h3>
-          <ul class="modal__lista">
+        <section>
+          <h3>Barreras y potenciadores</h3>
+          <ul>
             <li>Las tres barreras blancas protegen tu nave: tanto tus disparos como los enemigos las erosionan.</li>
             <li><strong class="destacado destacado--escudo">Escudo</strong> (cian): absorbe un impacto; puedes acumular hasta 3.</li>
             <li><strong class="destacado destacado--rafaga">Ráfaga</strong> (lima): durante 8 segundos disparas mucho más rápido.</li>
@@ -250,21 +258,21 @@
           </ul>
         </section>
 
-        <section class="modal__seccion">
-          <h3 class="modal__subtitulo">Controles</h3>
-          <ul class="modal__lista">
-            <li><kbd class="tecla">←</kbd> <kbd class="tecla">→</kbd> o <kbd class="tecla">A</kbd> <kbd class="tecla">D</kbd>: mover la nave.</li>
-            <li><kbd class="tecla">Espacio</kbd>: disparar.</li>
-            <li><kbd class="tecla">P</kbd> o <kbd class="tecla">Esc</kbd>: pausar y reanudar.</li>
-            <li><kbd class="tecla">Enter</kbd>: empezar o reanudar la partida.</li>
-            <li><kbd class="tecla">R</kbd>: reiniciar la partida desde cualquier punto.</li>
-            <li><kbd class="tecla">H</kbd>: abrir o cerrar esta ayuda.</li>
+        <section>
+          <h3>Controles</h3>
+          <ul>
+            <li><kbd>←</kbd> <kbd>→</kbd> o <kbd>A</kbd> <kbd>D</kbd>: mover la nave.</li>
+            <li><kbd>Espacio</kbd>: disparar.</li>
+            <li><kbd>P</kbd> o <kbd>Esc</kbd>: pausar y reanudar.</li>
+            <li><kbd>Enter</kbd>: empezar o reanudar la partida.</li>
+            <li><kbd>R</kbd>: reiniciar la partida desde cualquier punto.</li>
+            <li><kbd>H</kbd>: abrir o cerrar esta ayuda.</li>
             <li>También puedes usar los botones de la interfaz con el ratón o el tabulador.</li>
           </ul>
         </section>
 
-        <section class="modal__seccion">
-          <h3 class="modal__subtitulo">Dificultad</h3>
+        <section>
+          <h3>Dificultad</h3>
           <p>
             Se puede cambiar en el menú inicial y durante la pausa. Afecta a la velocidad de la
             flota, la cadencia de disparo enemigo, la probabilidad de potenciadores y las vidas

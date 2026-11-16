@@ -1,6 +1,11 @@
 /* ==========================================================================
-   physics.js — Física y utilidades matemáticas del modelo
-   Sin dependencias del DOM: sólo cálculo puro.
+   Fisica.js — Física y utilidades matemáticas del modelo
+   QUÉ ES: cálculo puro (sin DOM): colisiones, límites y movimiento.
+   CONTIENE: · colisiona() · limitar() · aleatorio() · elegir() · acelerar()
+   DÓNDE TOCAR:
+     · Cambiar qué cuenta como choque → colisiona().
+     · Cambiar la manejabilidad de la nave → acelerar() (los valores numéricos
+       están en JUGADOR, en constantes.js).
    ========================================================================== */
 
 (function (Arcade) {

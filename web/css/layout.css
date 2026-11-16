@@ -1,91 +1,57 @@
 /* ==========================================================================
    layout.css — Diseño espacial: composición de la página
-   Estrategia: grid para la estructura global (2D) y flex para las barras
-   (1D). El posicionamiento absoluto se reserva únicamente para las capas
-   superpuestas sobre el lienzo, donde no existe otro medio directo.
-   Unidades: contenedores generales en vw/dvh/min-max, texto en rem.
+   QUÉ ES: la distribución de la página: dónde va cada bloque y cómo se
+   reparte el espacio. Estrategia: grid para la estructura global (2D) y flex
+   para las barras (1D). El posicionamiento absoluto se reserva para las
+   capas superpuestas sobre el lienzo (components.css).
+   CONTIENE: · página (.app) · cabecera · rejilla principal · zona de juego ·
+             barra lateral · diseño responsive
+   DÓNDE TOCAR:
+     · Cambiar columnas, anchos o alineación → aquí.
+     · Las adaptaciones a pantallas anchas/estrechas están en los @media.
    ========================================================================== */
 
 .app {
-  display: grid;
-  grid-template-rows: auto 1fr;
-  gap: var(--esp-4);
-  min-height: 100dvh;
-  max-width: var(--ancho-app);
-  margin-inline: auto;
-  padding: var(--esp-5) clamp(var(--esp-4), 3vw, var(--esp-6));
+  display: grid; grid-template-rows: auto 1fr; gap: var(--esp-4);
+  min-height: 100dvh; max-width: var(--ancho-app);
+  margin-inline: auto; padding: var(--esp-5) clamp(var(--esp-4), 3vw, var(--esp-6));
 }
 
-/* Cabecera: composición unidimensional (flex) --------------------- */
-.cabecera {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--esp-3);
-}
-
-.cabecera__acciones {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--esp-2);
-}
+/* Cabecera: composición unidimensional (flex) */
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--esp-3); }
+header nav { display: flex; flex-wrap: wrap; gap: var(--esp-2); }
 
 /* Contenido: marcador | juego | apoyo en pantallas anchas (3D),
    y todo apilado en pantallas estrechas (1D).
    align-content alinea el bloque arriba, pegado a la cabecera, para que el
    espacio sobrante de pantallas altas se reparta abajo y no se abra un
-   hueco excesivo entre la cabecera y el juego. ------------------------- */
-.contenido {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: var(--esp-5);
-  align-items: stretch;
-  align-content: start;
-}
+   hueco excesivo entre la cabecera y el juego. */
+main { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--esp-5); align-items: stretch; align-content: start; }
 
 @media (min-width: 64rem) {
-  .contenido {
-    grid-template-columns: 13rem minmax(0, 1fr) minmax(17rem, 21rem);
-  }
+  main { grid-template-columns: 13rem minmax(0, 1fr) minmax(17rem, 21rem); }
 }
 
-.zona {
-  display: grid;
-  align-content: center;
-  justify-items: center;
-  gap: var(--esp-4);
-  width: 100%;
-}
+.zona { align-content: center; justify-items: center; gap: var(--esp-4); width: 100%; }
 
-/* Lienzo: contenedor con proporción fija -------------------------- */
+/* Lienzo: contenedor con proporción fija */
 .juego {
-  position: relative;
-  width: var(--ancho-zona);
-  aspect-ratio: 3 / 4;
-  min-width: 16rem;
-  overflow: hidden;
-  border: var(--grosor-borde) solid var(--color-borde);
-  border-radius: var(--radio-grande);
-  background: var(--color-fondo);
-  box-shadow: 0 1rem 3rem var(--color-sombra);
+  position: relative; width: var(--ancho-zona); aspect-ratio: 3 / 4; min-width: 16rem; overflow: hidden;
+  border: var(--grosor-borde) solid var(--color-borde); border-radius: var(--radio-grande);
+  background: var(--color-fondo); box-shadow: 0 1rem 3rem var(--color-sombra);
 }
-
-.juego__lienzo {
-  width: 100%;
-  height: 100%;
-}
+.juego canvas { width: 100%; height: 100%; }
 
 /* Barra lateral: secciones apiladas (proximidad, Gestalt).
-   space-between reparte las tarjetas por todo el alto de la columna. --- */
-.barra-lateral {
-  display: grid;
-  align-content: space-between;
-  gap: var(--esp-4);
+   space-between reparte las tarjetas por todo el alto de la columna. */
+aside { display: grid; align-content: space-between; gap: var(--esp-4); }
+aside section {
+  padding: var(--esp-4); background: var(--color-superficie);
+  border: var(--grosor-borde) solid var(--color-borde); border-radius: var(--radio);
 }
+aside h2 { font-size: var(--fs-3); color: var(--color-acento); }
+aside p { font-size: var(--fs-0); color: var(--color-texto-tenue); }
 
 @media (max-width: 63.99rem) {
-  .barra-lateral {
-    grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
-  }
+  aside { grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); }
 }

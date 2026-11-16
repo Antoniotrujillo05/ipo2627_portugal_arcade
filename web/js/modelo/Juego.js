@@ -1,9 +1,18 @@
 /* ==========================================================================
-   Game.js — Modelo central del juego
-   Contiene el estado de la partida y toda la lógica de actualización:
-   acciones de las entidades, física, colisiones y reglas de puntuación.
-   No accede al DOM ni al canvas: sólo recibe el estado de entrada
-   (teclas) y lo transforma en estado nuevo. La vista lo dibuja después.
+   Juego.js — Modelo central del juego
+   QUÉ ES: el cerebro de la partida. Guarda el estado (puntuación, vidas,
+   entidades…) y todas las reglas: cómo se mueven, qué chocan y qué puntúa.
+   No toca el DOM ni el canvas: recibe intenciones de movimiento y devuelve
+   datos; las vistas sólo reciben sus proyecciones obtenerEstado/obtenerEscena.
+   CONTIENE: · máquina de fases · bucle de actualización · acciones de las
+             entidades · colisiones · puntuación y oleadas · récord
+   DÓNDE TOCAR:
+     · Cambiar reglas de puntuación → _completarOleada, _recogerPotenciador.
+     · Cambiar cómo se mueve la flota → _actualizarFormacion.
+     · Cambiar la dificultad del fuego enemigo → _actualizarDisparoEnemigo.
+     · Añadir una entidad nueva → créala en Entidades.js y aquí su creación,
+       actualización y colisiones (y su dibujo en RenderizadorLienzo.js).
+     · Añadir un tipo de potenciador → _recogerPotenciador.
    ========================================================================== */
 
 (function (Arcade) {
@@ -18,6 +27,7 @@ const {
   OVNI,
   POTENCIADOR,
   JUEGO,
+  FASE,
 } = Arcade;
 
 const {
@@ -31,14 +41,6 @@ const {
 } = Arcade;
 
 const { colisiona, limitar, aleatorio, elegir, acelerar } = Arcade;
-
-/** Fases de la máquina de estados del juego */
-const FASE = {
-  MENU: 'menu',
-  JUGANDO: 'jugando',
-  PAUSA: 'pausado',
-  FIN: 'fin',
-};
 
 class Juego {
   constructor(ajustes) {
@@ -98,12 +100,14 @@ class Juego {
     this._anunciar(`¡OLEADA ${this.oleada}!`, 1.6);
   }
 
+  /** Pone la partida en pausa (sólo desde jugando) */
   pausar() {
     if (this.fase === FASE.JUGANDO) {
       this.fase = FASE.PAUSA;
     }
   }
 
+  /** Reanuda la partida desde la pausa */
   reanudar() {
     if (this.fase === FASE.PAUSA) {
       this.fase = FASE.JUGANDO;
@@ -117,6 +121,7 @@ class Juego {
     }
   }
 
+  /** Vuelve al menú inicial */
   volverAlMenu() {
     this.fase = FASE.MENU;
     this.mensaje = null;
@@ -128,14 +133,14 @@ class Juego {
 
   /**
    * @param {number} dt  segundos transcurridos desde el fotograma anterior
-   * @param {{izquierda:boolean, derecha:boolean, disparo:boolean}} entrada
+   * @param {{direccion: number, disparo: boolean}} intencion
+   *        intención de movimiento traducida por el controlador
    */
-  actualizar(dt, entrada) {
-    this._avanzarMensaje(dt);
-
+  actualizar(dt, intencion) {
     if (this.fase !== FASE.JUGANDO || !this.nave) return;
 
-    this._actualizarJugador(dt, entrada);
+    this._avanzarMensaje(dt);
+    this._actualizarJugador(dt, intencion);
 
     if (this.intermedio > 0) {
       this.intermedio -= dt;
@@ -157,24 +162,25 @@ class Juego {
      Acciones de las entidades
      ------------------------------------------------------------------ */
 
-  _actualizarJugador(dt, entrada) {
+  /** Mueve la nave según la intención del jugador y gestiona su cadencia de disparo */
+  _actualizarJugador(dt, intencion) {
     const nave = this.nave;
-    const direccion = (entrada.derecha ? 1 : 0) - (entrada.izquierda ? 1 : 0);
 
     // Física: aceleración al pulsar, rozamiento al soltar
-    nave.vx = acelerar(nave.vx, direccion, dt, JUGADOR);
+    nave.vx = acelerar(nave.vx, intencion.direccion, dt, JUGADOR);
     nave.x = limitar(nave.x + nave.vx * dt, 6, LIENZO.ancho - nave.w - 6);
 
     // Temporizadores
     nave.tiempoDisparo = Math.max(0, nave.tiempoDisparo - dt);
     nave.invulnerable = Math.max(0, nave.invulnerable - dt);
-    nave.rapido = Math.max(0, nave.rapido - dt);
+    nave.rafaga = Math.max(0, nave.rafaga - dt);
 
-    if (entrada.disparo && nave.tiempoDisparo === 0) {
+    if (intencion.disparo && nave.tiempoDisparo === 0) {
       this._dispararJugador();
     }
   }
 
+  /** Crea un proyectil del jugador desde el cañón de la nave */
   _dispararJugador() {
     const nave = this.nave;
     this.proyectiles.push(
@@ -188,7 +194,7 @@ class Juego {
         dueno: 'jugador',
       })
     );
-    nave.tiempoDisparo = nave.rapido > 0 ? JUGADOR.cadencia * 0.45 : JUGADOR.cadencia;
+    nave.tiempoDisparo = nave.rafaga > 0 ? JUGADOR.cadencia * 0.45 : JUGADOR.cadencia;
   }
 
   /** Movimiento de la flota: rebaño con cambios de sentido y descenso */
@@ -264,6 +270,7 @@ class Juego {
       (base / this.ajustes.valores.cadenciaEnemiga) * aleatorio(0.7, 1.4);
   }
 
+  /** Desplaza al ovni o, si no hay ninguno, programa su próxima aparición */
   _actualizarOvni(dt) {
     if (this.ovni) {
       this.ovni.x += this.ovni.vx * dt;
@@ -291,6 +298,7 @@ class Juego {
     }
   }
 
+  /** Mueve los proyectiles y descarta los que salen del lienzo */
   _actualizarProyectiles(dt) {
     for (const b of this.proyectiles) {
       b.x += b.vx * dt;
@@ -306,6 +314,7 @@ class Juego {
     );
   }
 
+  /** Hace caer los potenciadores bajo la gravedad */
   _actualizarPotenciadores(dt) {
     for (const p of this.potenciadores) {
       p.vy += POTENCIADOR.gravedad * dt;
@@ -316,6 +325,7 @@ class Juego {
     );
   }
 
+  /** Avanza las explosiones y elimina las que ya terminaron */
   _actualizarEfectos(dt) {
     for (const efecto of this.efectos) efecto.actualizar(dt);
     this.efectos = this.efectos.filter((e) => !e.agotado);
@@ -325,6 +335,7 @@ class Juego {
      Detección de colisiones
      ------------------------------------------------------------------ */
 
+  /** Resuelve todos los choques entre entidades (proyectiles, flota, ovni…) */
   _comprobarColisiones() {
     for (const b of this.proyectiles) {
       if (!b.vivo) continue;
@@ -342,7 +353,7 @@ class Juego {
           this.ovni = null;
           b.vivo = false;
           this.puntuacion += puntos;
-          this._anunciar(`¡OVNI DERIBADO! +${puntos}`, 1.2);
+          this._anunciar(`¡OVNI DERRIBADO! +${puntos}`, 1.2);
           continue;
         }
 
@@ -390,6 +401,7 @@ class Juego {
     }
   }
 
+  /** Un proyectil vivo erosiona la primera barrera que toca */
   _danarBarreras(proyectil) {
     for (const barrera of this.barreras) {
       if (!colisiona(proyectil, barrera)) continue;
@@ -408,6 +420,7 @@ class Juego {
     }
   }
 
+  /** Gestiona un impacto en la nave: lo absorbe el escudo o cuesta una vida */
   _impactoNave() {
     const nave = this.nave;
     if (nave.invulnerable > 0) return;
@@ -436,6 +449,7 @@ class Juego {
     }
   }
 
+  /** Acaba la partida si algún enemigo vivo alcanza la línea de la nave */
   _comprobarInvasion() {
     if (this.fase !== FASE.JUGANDO) return;
     const invade = this.enemigos.some(
@@ -451,6 +465,7 @@ class Juego {
      Reglas de puntuación y oleadas
      ------------------------------------------------------------------ */
 
+  /** Al vaciar la flota: bonus de puntos y pausa breve antes de la siguiente */
   _completarOleada() {
     const bonus = JUEGO.bonusOleada * this.oleada;
     this.puntuacion += bonus;
@@ -462,12 +477,14 @@ class Juego {
     );
   }
 
+  /** Pasa a la siguiente oleada */
   _siguienteOleada() {
     this.oleada += 1;
     this._crearOleada();
     this._anunciar(`¡OLEADA ${this.oleada}!`, 1.6);
   }
 
+  /** Genera la flota enemiga (8 columnas × 4 filas) centrada en el lienzo */
   _crearOleada() {
     const { columnas, filas, ancho, alto, separacionX, y0, tipos, puntos } =
       ENEMIGOS;
@@ -494,6 +511,7 @@ class Juego {
     this.direccion = 1;
   }
 
+  /** Crea la nave del jugador centrada en la parte baja del lienzo */
   _crearNave() {
     return new Nave({
       x: LIENZO.ancho / 2 - JUGADOR.ancho / 2,
@@ -503,6 +521,7 @@ class Juego {
     });
   }
 
+  /** Crea las barreras destructibles repartidas por el ancho del lienzo */
   static _crearBarreras() {
     const { cantidad, celdasX, celdasY, celda, y } = BARRERAS;
     const ancho = celdasX * celda;
@@ -522,6 +541,7 @@ class Juego {
     return barreras;
   }
 
+  /** Suelta un potenciador desde la posición de un enemigo destruido */
   _soltarPotenciador(enemigo) {
     this.potenciadores.push(
       new Potenciador({
@@ -534,6 +554,7 @@ class Juego {
     );
   }
 
+  /** Aplica el efecto del potenciador recogido (escudo, ráfaga o vida) */
   _recogerPotenciador(potenciador) {
     this.puntuacion += POTENCIADOR.puntos;
 
@@ -546,7 +567,7 @@ class Juego {
         this._anunciar('¡ESCUDO +1!', 1.4);
         break;
       case 'rafaga':
-        this.nave.rapido = POTENCIADOR.duracionRafaga;
+        this.nave.rafaga = POTENCIADOR.duracionRafaga;
         this._anunciar('¡DISPARO RÁPIDO!', 1.4);
         break;
       case 'vida':
@@ -571,6 +592,7 @@ class Juego {
     );
   }
 
+  /** Cierra la partida: guarda el motivo y actualiza el récord si procede */
   _finalizar(motivo) {
     this.fase = FASE.FIN;
     this.motivoFin = motivo;
@@ -583,30 +605,76 @@ class Juego {
   }
 
   /* ------------------------------------------------------------------
+     Proyecciones de solo lectura para las vistas
+     ------------------------------------------------------------------ */
+
+  /**
+   * Estado de la interfaz: datos planos para el HUD y las capas.
+   * La vista recibe esta proyección y nunca consulta el modelo.
+   */
+  obtenerEstado() {
+    return {
+      fase: this.fase,
+      puntuacion: this.puntuacion,
+      record: this.record,
+      nuevoRecord: this.nuevoRecord,
+      vidas: this.vidas,
+      oleada: this.oleada,
+      motivoFin: this.motivoFin,
+      mensaje: this.mensaje ? this.mensaje.texto : null,
+      escudo: this.nave ? this.nave.escudo : 0,
+      enemigosVivos: this.enemigosVivos,
+      enemigosTotales: this.enemigosTotales,
+      dificultad: this.ajustes.dificultad,
+    };
+  }
+
+  /**
+   * Escena de dibujo: colecciones de entidades para el renderizador.
+   * Sólo lectura: la vista dibuja estos datos y nunca los modifica.
+   */
+  obtenerEscena() {
+    return {
+      fase: this.fase,
+      nave: this.nave,
+      enemigos: this.enemigos,
+      proyectiles: this.proyectiles,
+      barreras: this.barreras,
+      ovni: this.ovni,
+      potenciadores: this.potenciadores,
+      efectos: this.efectos,
+    };
+  }
+
+  /* ------------------------------------------------------------------
      Utilidades internas
      ------------------------------------------------------------------ */
 
+  /** Muestra un mensaje temporal en pantalla (ttl = segundos de vida) */
   _anunciar(texto, ttl) {
     this.mensaje = { texto, ttl };
   }
 
+  /** Descuenta el tiempo de vida del mensaje y lo oculta al agotarse */
   _avanzarMensaje(dt) {
     if (!this.mensaje) return;
     this.mensaje.ttl -= dt;
     if (this.mensaje.ttl <= 0) this.mensaje = null;
   }
 
+  /** Añade una explosión de partículas (efecto visual temporal) */
   _efecto(x, y, tono, cantidad = 12, radio = 14) {
     this.efectos.push(new Efecto({ x, y, tono, cantidad, radio }));
   }
 
-  /** Enemigos vivos (lo usa la vista para el indicador de progreso) */
+  /** Enemigos vivos (lo usa la proyección obtenerEstado) */
   get enemigosVivos() {
     let n = 0;
     for (const e of this.enemigos) if (e.vivo) n += 1;
     return n;
   }
 
+  /** Lee el récord guardado en el navegador (o 0 si no hay nada guardado) */
   static _leerRecord() {
     try {
       const valor = window.localStorage.getItem(JUEGO.claveRecord);
@@ -616,6 +684,7 @@ class Juego {
     }
   }
 
+  /** Guarda el récord en el navegador (si el almacenamiento está disponible) */
   static _guardarRecord(valor) {
     try {
       window.localStorage.setItem(JUEGO.claveRecord, String(valor));
@@ -625,5 +694,5 @@ class Juego {
   }
 }
 
-Object.assign(Arcade, { FASE, Juego });
+Object.assign(Arcade, { Juego });
 })(window.Arcade = window.Arcade || {});

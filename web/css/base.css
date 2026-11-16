@@ -1,112 +1,94 @@
 /* ==========================================================================
-   base.css — Reset, elementos raíz y utilidades
-   Regla reset básica para unificar el diseño entre navegadores.
+   base.css — Reset y estilos por etiqueta
+   QUÉ ES: el estilo general de los elementos HTML (sin clases), según la
+   estrategia "etiquetas primero", más el reset que unifica navegadores.
+   CONTIENE: · reset · tipografía de etiquetas · tablas · formularios ·
+             kbd · utilidades (.tenue) · accesibilidad
+   DÓNDE TOCAR:
+     · Cambiar el aspecto de TODOS los botones, etiquetas, tablas… → aquí.
+     · Añadir una utilidad pequeña (clase reutilizable) → sección Utilidades.
+     · Los estilos de componentes concretos van en components.css.
    ========================================================================== */
 
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-}
-
-* {
-  margin: 0;
-}
-
-html {
-  -webkit-text-size-adjust: 100%;
-}
+*, *::before, *::after { box-sizing: border-box; }
+* { margin: 0; }
+html { -webkit-text-size-adjust: 100%; }
 
 body {
   min-height: 100dvh;
-  background:
-    radial-gradient(120% 80% at 50% -10%, var(--color-fondo-degradado), transparent 60%),
-    var(--color-fondo);
+  background: radial-gradient(120% 80% at 50% -10%, var(--color-fondo-degradado), transparent 60%), var(--color-fondo);
   color: var(--color-texto);
-  font-family: var(--font-texto);
-  font-size: var(--fs-2);
-  line-height: var(--lh-normal);
+  font-family: var(--font-texto); font-size: var(--fs-2); line-height: var(--lh-normal);
 }
 
+/* Tipografía: una única familia de títulos con niveles de realce */
 h1, h2, h3 {
-  font-family: var(--font-display);
-  font-weight: var(--peso-negrita);
-  line-height: var(--lh-corto);
-  letter-spacing: var(--tracking);
+  font-family: var(--font-display); font-weight: var(--peso-negrita); line-height: var(--lh-corto);
+  letter-spacing: var(--tracking); text-transform: uppercase;
+}
+h1 { font-size: var(--fs-titulo); }
+h2 { font-size: var(--fs-4); }
+h3 { font-size: var(--fs-2); color: var(--color-info); }
+
+p { max-width: 65ch; } /* ≈ 60 caracteres por línea (recomendación tipográfica) */
+ul { display: grid; gap: var(--esp-1); padding-inline-start: var(--esp-5); }
+a { color: var(--color-acento); }
+
+/* Secciones: bloques de contenido con sus apartados apilados (Gestalt) */
+section { display: grid; gap: var(--esp-2); }
+
+/* Listas de datos (controles y resumen): etiqueta | valor */
+dl { display: grid; gap: var(--esp-2); }
+dl > div { display: flex; align-items: center; justify-content: space-between; gap: var(--esp-3); }
+dt { color: var(--color-texto-tenue); font-size: var(--fs-1); }
+dd {
+  display: flex; align-items: center; gap: var(--esp-1);
+  font-family: var(--font-display); font-weight: var(--peso-negrita); color: var(--color-acento);
 }
 
-p {
-  max-width: 65ch; /* ≈ 60 caracteres por línea (recomendación tipográfica) */
-}
+table { width: 100%; border-collapse: collapse; font-size: var(--fs-1); color: var(--color-texto); }
+th, td { padding: var(--esp-1) var(--esp-2); border-bottom: 1px dashed var(--color-borde); text-align: left; }
+th, td:last-child { font-family: var(--font-display); }
+th { color: var(--color-acento); }
 
-ul {
-  padding-inline-start: var(--esp-5);
-}
+label { font-size: var(--fs-0); letter-spacing: var(--tracking); text-transform: uppercase; color: var(--color-texto-tenue); }
 
-a {
-  color: var(--color-acento);
+button, select, input { font: inherit; color: inherit; }
+button { cursor: pointer; }
+select {
+  width: 100%; padding: var(--esp-3) var(--esp-4);
+  border: var(--grosor-borde) solid var(--color-borde); border-radius: var(--radio);
+  background: var(--color-superficie-alta); font-size: var(--fs-2); cursor: pointer;
 }
-
-button,
-select,
-input {
-  font: inherit;
-  color: inherit;
-}
-
-canvas {
-  display: block;
-  max-width: 100%;
-}
+select:hover { border-color: var(--color-acento); }
 
 kbd {
-  font-family: var(--font-display);
+  display: inline-block; padding: 0 var(--esp-1);
+  border: var(--grosor-borde) solid var(--color-borde); border-radius: var(--radio);
+  background: var(--color-superficie);
+  font-family: var(--font-display); font-size: var(--fs-0); color: var(--color-acento-tenue);
 }
 
-[hidden] {
-  display: none !important;
-}
-
-::selection {
-  background: var(--color-acento);
-  color: var(--color-fondo);
-}
+canvas { display: block; max-width: 100%; }
+[hidden] { display: none !important; }
+::selection { background: var(--color-acento); color: var(--color-fondo); }
 
 /* Foco visible siempre (usabilidad y accesibilidad) */
-:focus-visible {
-  outline: 3px solid var(--color-acento);
-  outline-offset: 2px;
-}
+:focus-visible { outline: 3px solid var(--color-acento); outline-offset: 2px; }
 
-/* Utilidad para texto accesible sólo para lectores de pantalla */
-.visually-hidden {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  margin: -1px;
-  padding: 0;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
-}
+/* Utilidades */
+.tenue { color: var(--color-texto-tenue); font-size: var(--fs-0); }
 
 .aviso-noscript {
-  margin: var(--esp-5) auto;
-  padding: var(--esp-4);
-  max-width: 30rem;
-  border: var(--grosor-borde) solid var(--color-peligro);
-  border-radius: var(--radio);
+  margin: var(--esp-5) auto; padding: var(--esp-4); max-width: 30rem; text-align: center;
+  border: var(--grosor-borde) solid var(--color-peligro); border-radius: var(--radio);
   background: var(--color-peligro-fondo);
-  text-align: center;
 }
 
 /* Respeta la preferencia del usuario de reducir el movimiento */
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important; animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
 }

@@ -1,13 +1,24 @@
 /* ==========================================================================
-   config.js — Constantes del juego
-   Centralizadas para que Modelo, Vista y Controlador compartan los mismos
-   valores sin duplicarlos (una sola fuente de verdad).
+   constantes.js — Constantes del juego (única fuente de verdad)
+   QUÉ ES: el panel de ajustes del juego. Todos los números y nombres que
+   gobiernan la partida están aquí, para que Modelo, Vista y Controlador
+   compartan los mismos valores sin duplicarlos.
+   CONTIENE: · lienzo · dificultades · nave · proyectiles · enemigos ·
+             barreras · ovni · potenciadores · reglas · fases
+   DÓNDE TOCAR:
+     · Cambiar puntos, vidas, velocidades o tamaños → edita la constante
+       correspondiente; el juego y la ayuda se actualizan solos.
+     · Añadir una dificultad → añade una entrada en DIFICULTADES (los tres
+       selectores del HTML la mostrarán automáticamente).
+     · Añadir un tipo de potenciador → añádelo a POTENCIADOR.tipos y aplica
+       su efecto en Juego._recogerPotenciador.
+     · Cambiar el nombre de una fase → modifica FASE (se usa en las 3 capas).
    ========================================================================== */
 
-/** Lienzo lógico: dimensiones en unidades de diseño (px) */
 (function (Arcade) {
 'use strict';
 
+/** Lienzo lógico: dimensiones en unidades de diseño (px) */
 const LIENZO = {
   ancho: 480,
   alto: 640,
@@ -19,6 +30,7 @@ const DIFICULTADES = {
   facil: {
     id: 'facil',
     etiqueta: 'Fácil',
+    descripcion: '4 vidas',
     vidas: 4,
     factorVelocidad: 0.75,
     cadenciaEnemiga: 0.6,
@@ -27,6 +39,7 @@ const DIFICULTADES = {
   normal: {
     id: 'normal',
     etiqueta: 'Normal',
+    descripcion: '3 vidas',
     vidas: 3,
     factorVelocidad: 1,
     cadenciaEnemiga: 1,
@@ -35,6 +48,7 @@ const DIFICULTADES = {
   dificil: {
     id: 'dificil',
     etiqueta: 'Difícil',
+    descripcion: 'veloz y agresiva',
     vidas: 3,
     factorVelocidad: 1.3,
     cadenciaEnemiga: 1.6,
@@ -110,7 +124,6 @@ const OVNI = {
 const POTENCIADOR = {
   ancho: 22,
   alto: 18,
-  velocidadInicial: 45,
   gravedad: 60,
   tipos: ['escudo', 'rafaga', 'vida'],
   duracionRafaga: 8,
@@ -124,6 +137,15 @@ const JUEGO = {
   claveRecord: 'portugal-arcade.record',
 };
 
+/** Fases de la máquina de estados del juego: vocabulario compartido por
+    Modelo, Vista y Controlador (nunca como cadenas sueltas) */
+const FASE = {
+  MENU: 'menu',
+  JUGANDO: 'jugando',
+  PAUSA: 'pausado',
+  FIN: 'fin',
+};
+
 Object.assign(Arcade, {
   LIENZO,
   DIFICULTADES,
@@ -135,5 +157,6 @@ Object.assign(Arcade, {
   OVNI,
   POTENCIADOR,
   JUEGO,
+  FASE,
 });
 })(window.Arcade = window.Arcade || {});

@@ -1,9 +1,16 @@
 /* ==========================================================================
-   tokens.css — Diseño cromático y tipográfico
-   Estrategia cromática: sistema HSL con esquema complementario (265° ↔ 85°).
-   Toda la paleta se concentra en :root para parametrizarla con var()/calc().
-   Estrategia tipográfica: dos fuentes contrastadas del sistema
-   (monoespaciada para títulos y cifras / sans-serif para el texto corrido).
+   tokens.css — Diseño cromático y tipográfico (los "tokens")
+   QUÉ ES: la paleta y la escala del diseño, concentradas en :root. Todo el
+   color, la tipografía y el espaciado del proyecto salen de estas variables.
+   Estrategia cromática: sistema HSL con esquema complementario (265° ↔ 85°),
+   parametrizado con var()/calc(). Estrategia tipográfica: dos fuentes
+   contrastadas (monoespaciada para títulos y cifras / sans-serif para texto).
+   CONTIENE: · colores (neutros, velos, texto, acento, señales) · fuentes y
+             tamaños · espaciado · bordes · transiciones · anchos
+   DÓNDE TOCAR:
+     · Cambiar cualquier color, fuente o espacio → edita un token aquí y se
+       propaga solo a todo el proyecto (CSS y canvas).
+     · Añadir un color nuevo → decláralo en su grupo y úsalo con var().
    ========================================================================== */
 
 :root {
@@ -17,6 +24,13 @@
   --color-borde: hsl(265 40% 30%);
   --color-sombra: hsl(265 60% 3% / 0.6);
 
+  /* --- Cromática: velos translúcidos (capas y efectos) --- */
+  --color-velo: hsl(265 45% 6% / 0.82);
+  --color-velo-mensaje: hsl(265 45% 6% / 0.96);
+  --color-velo-modal: hsl(265 60% 3% / 0.78);
+  --color-crt-linea: hsl(265 45% 6% / 0.18);
+  --color-crt-vineta: hsl(265 60% 3% / 0.55);
+
   /* --- Cromática: texto --- */
   --color-texto: hsl(265 20% 95%);
   --color-texto-tenue: hsl(265 16% 74%);
@@ -28,7 +42,6 @@
 
   /* --- Cromática: señales semánticas (uso mínimo y justificado) --- */
   --color-info: hsl(185 90% 60%);
-  --color-info-fondo: hsl(185 60% 14%);
   --color-peligro: hsl(5 88% 62%);
   --color-peligro-fondo: hsl(5 60% 15%);
 
@@ -46,11 +59,11 @@
   --fs-titulo: clamp(2rem, 5vw, 3rem);
   --fs-hud: 1.25rem;
 
-  --peso-normal: 400;
   --peso-negrita: 700;
   --lh-corto: 1.2;
   --lh-normal: 1.5;
   --tracking: 0.08em;
+  --tracking-amplio: 0.15em;
 
   /* --- Espacial: escala de espaciado en rem --- */
   --esp-1: 0.3rem;

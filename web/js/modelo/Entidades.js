@@ -1,7 +1,13 @@
 /* ==========================================================================
-   entities.js — Entidades del modelo
-   Objetos de datos con su comportamiento mínimo. No conocen el DOM ni el
-   contexto 2D: sólo guardan estado y lo actualizan.
+   Entidades.js — Entidades del modelo
+   QUÉ ES: las piezas del juego (nave, proyectiles, enemigos…): objetos de
+   datos con su comportamiento mínimo. No conocen el DOM ni el canvas.
+   CONTIENE: · Nave · Proyectil · Enemigo · Ovni · Barrera · Potenciador · Efecto
+   DÓNDE TOCAR:
+     · Añadir una entidad nueva → crea su clase aquí y regístrala al final en
+       Object.assign; después ensámblala en Juego.js y dibújala en
+       RenderizadorLienzo.js.
+     · Cambiar cómo se erosionan las barreras → Barrera.danar().
    ========================================================================== */
 
 (function (Arcade) {
@@ -18,7 +24,7 @@ class Nave {
     this.tiempoDisparo = 0;
     this.invulnerable = 0;
     this.escudo = 0;
-    this.rapido = 0;
+    this.rafaga = 0;
   }
 }
 
@@ -50,7 +56,8 @@ class Enemigo {
   }
 }
 
-/** Ovni bonus que cruza la parte superior */
+/** Ovni bonus que cruza la parte superior (su ciclo de vida es el objeto
+    ovni del juego: existe mientras está en pantalla) */
 class Ovni {
   constructor({ x, y, w, h, vx, puntos }) {
     this.x = x;
@@ -59,7 +66,6 @@ class Ovni {
     this.h = h;
     this.vx = vx;
     this.puntos = puntos;
-    this.vivo = true;
   }
 }
 
@@ -70,6 +76,7 @@ class Barrera {
     this.y = y;
     this.w = celdasX * celda;
     this.h = celdasY * celda;
+    this.celda = celda;
     this.celdas = [];
 
     for (let fila = 0; fila < celdasY; fila++) {
@@ -95,9 +102,9 @@ class Barrera {
     for (const celda of this.celdas) {
       if (!celda.activa) continue;
       const solapa =
-        caja.x < celda.x + 5 &&
+        caja.x < celda.x + this.celda &&
         caja.x + caja.w > celda.x &&
-        caja.y < celda.y + 5 &&
+        caja.y < celda.y + this.celda &&
         caja.y + caja.h > celda.y;
       if (solapa) {
         celda.activa = false;

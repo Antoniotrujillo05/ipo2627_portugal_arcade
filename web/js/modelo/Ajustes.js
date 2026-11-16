@@ -1,6 +1,12 @@
 /* ==========================================================================
-   settings.js — Parámetros ajustables por el usuario
-   La dificultad se puede cambiar antes de comenzar y durante la pausa.
+   Ajustes.js — Parámetros ajustables por el usuario
+   QUÉ ES: los ajustes de la partida (hoy sólo la dificultad), que se pueden
+   cambiar antes de comenzar y durante la pausa.
+   CONTIENE: · Ajustes (dificultad activa y su cambio)
+   DÓNDE TOCAR:
+     · Añadir un ajuste nuevo (p. ej. velocidad personalizada) → añade un
+       campo aquí, explótalo en Juego.js y añade su control en index.html
+       con el atributo data-ajuste.
    ========================================================================== */
 
 (function (Arcade) {
@@ -29,11 +35,6 @@ class Ajustes {
     }
     this._dificultad = id;
     return true;
-  }
-
-  /** Lista para poblar los selectores de la vista */
-  static get opciones() {
-    return Object.values(DIFICULTADES);
   }
 }
 

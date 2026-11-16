@@ -1,16 +1,22 @@
 /* ==========================================================================
-   CanvasRenderer.js — Vista del lienzo (Canvas API 2D)
-   Dibuja el estado del modelo con el ciclo limpiar → pintar.
-   Las figuras del canvas no tienen reflejo en el DOM, así que todo lo que
-   se ve durante la partida se dibuja aquí con primitivas del contexto 2d.
+   RenderizadorLienzo.js — Vista del lienzo (Canvas API 2D)
+   QUÉ ES: la vista del lienzo: dibuja la escena con la Canvas API 2D.
+   No conoce el modelo: sólo recibe datos de dibujo y los pinta con el ciclo
+   limpiar → pintar. Las figuras del canvas no tienen reflejo en el DOM.
+   CONTIENE: · sprites de los enemigos · estrellas del fondo · dibujo por
+             capas (fondo → defensa → enemigos → proyectiles → nave)
+   DÓNDE TOCAR:
+     · Dibujar una entidad nueva → añade su _dibujarX() y llámalo en renderizar().
+     · Cambiar el aspecto de una entidad → su método _dibujarX().
+     · Cambiar colores → se leen de tokens.css (no escribas colores aquí).
    ========================================================================== */
 
 (function (Arcade) {
 'use strict';
 
-const { LIENZO, ENEMIGOS } = Arcade;
+const { LIENZO, ENEMIGOS, FASE } = Arcade;
 
-/* Sprites de11 × 8 celdas dibujados con rectángulos --------------- */
+/* Sprites de 11 × 8 celdas dibujados con rectángulos --------------- */
 const SPRITES = {
   calamar: {
     cuerpo: [
@@ -50,12 +56,12 @@ const SPRITES = {
   },
 };
 
-const COLOR_FILA = ['--color-peligro', '--color-acento', '--color-acento', '--color-info'];
+/** Color de cada fila de la flota (clave de los tokens cromáticos) */
+const COLOR_FILA = ['peligro', 'acento', 'acento', 'info'];
 
 class RenderizadorLienzo {
-  constructor(canvas, juego) {
+  constructor(canvas) {
     this.canvas = canvas;
-    this.juego = juego;
     this.ctx = canvas.getContext('2d');
     this.tiempo = 0;
     this._colores = RenderizadorLienzo._leerTokens();
@@ -73,6 +79,7 @@ class RenderizadorLienzo {
       estilos.getPropertyValue(nombre).trim() || porDefecto;
     return {
       fondo: leer('--color-fondo', '#0d0a1a'),
+      fondoDegradado: leer('--color-fondo-degradado', 'hsl(265 55% 12%)'),
       texto: leer('--color-texto', '#f5f4fa'),
       textoTenue: leer('--color-texto-tenue', '#b9b5c9'),
       acento: leer('--color-acento', '#c8f542'),
@@ -81,6 +88,7 @@ class RenderizadorLienzo {
     };
   }
 
+  /** Genera el fondo de estrellas con posición, tamaño y velocidad aleatorios */
   static _crearEstrellas(cantidad) {
     const estrellas = [];
     for (let i = 0; i < cantidad; i++) {
@@ -105,13 +113,13 @@ class RenderizadorLienzo {
   }
 
   /**
-   * @param {number} tiempo segundos acumulados para animaciones (estrellas,
+   * @param {object} escena  datos de dibujo (proyección del modelo)
+   * @param {number} tiempo  segundos acumulados para animaciones (estrellas,
    * parpadeos, sprites)
    */
-  renderizar(tiempo) {
+  renderizar(escena, tiempo) {
     this.tiempo = tiempo;
     const ctx = this.ctx;
-    const juego = this.juego;
 
     // 1) Limpiar el lienzo
     ctx.clearRect(0, 0, LIENZO.ancho, LIENZO.alto);
@@ -119,24 +127,27 @@ class RenderizadorLienzo {
     // 2) Pintar por capas: fondo → defensa → enemigos → proyectiles → nave
     this._dibujarFondo();
     this._dibujarLineaDefensa();
-    this._dibujarBarreras(juego.barreras);
+    this._dibujarBarreras(escena.barreras);
 
-    if (juego.ovni) this._dibujarOvni(juego.ovni);
-    this._dibujarEnemigos(juego.enemigos);
-    this._dibujarPotenciadores(juego.potenciadores);
-    this._dibujarProyectiles(juego.proyectiles);
+    if (escena.ovni) this._dibujarOvni(escena.ovni);
+    this._dibujarEnemigos(escena.enemigos);
+    this._dibujarPotenciadores(escena.potenciadores);
+    this._dibujarProyectiles(escena.proyectiles);
 
-    if (juego.nave && juego.fase !== 'menu') this._dibujarNave(juego.nave);
+    if (escena.nave && escena.fase !== FASE.MENU) {
+      this._dibujarNave(escena.nave);
+    }
 
-    this._dibujarEfectos(juego.efectos);
+    this._dibujarEfectos(escena.efectos);
   }
 
+  /** Fondo: degradado vertical y estrellas que caen lentamente */
   _dibujarFondo() {
     const ctx = this.ctx;
     if (!this._degradado) {
       const g = ctx.createLinearGradient(0, 0, 0, LIENZO.alto);
-      g.addColorStop(0, 'hsl(265 55% 14%)');
-      g.addColorStop(1, 'hsl(265 50% 5%)');
+      g.addColorStop(0, this._colores.fondoDegradado);
+      g.addColorStop(1, this._colores.fondo);
       this._degradado = g;
     }
     ctx.fillStyle = this._degradado;
@@ -154,6 +165,7 @@ class RenderizadorLienzo {
     ctx.globalAlpha = 1;
   }
 
+  /** Línea discontinua roja: si la flota la cruza, se acaba la partida */
   _dibujarLineaDefensa() {
     const ctx = this.ctx;
     const y = LIENZO.alto - 56;
@@ -169,17 +181,19 @@ class RenderizadorLienzo {
     ctx.restore();
   }
 
+  /** Barreras: un rectángulo por cada celda que sigue viva */
   _dibujarBarreras(barreras) {
     const ctx = this.ctx;
     ctx.fillStyle = this._colores.textoTenue;
     for (const barrera of barreras) {
       for (const celda of barrera.celdas) {
         if (!celda.activa) continue;
-        ctx.fillRect(celda.x, celda.y, 5, 5);
+        ctx.fillRect(celda.x, celda.y, barrera.celda, barrera.celda);
       }
     }
   }
 
+  /** Enemigos: sprites de píxeles con dos fotogramas de patas que se alternan */
   _dibujarEnemigos(enemigos) {
     const ctx = this.ctx;
     const { celda } = ENEMIGOS;
@@ -189,9 +203,7 @@ class RenderizadorLienzo {
       if (!e.vivo) continue;
       const sprite = SPRITES[e.tipo];
       const filas = sprite.cuerpo.concat(frame === 0 ? sprite.patasA : sprite.patasB);
-      ctx.fillStyle = this._colores[
-        ['peligro', 'acento', 'acento', 'info'][e.fila]
-      ];
+      ctx.fillStyle = this._colores[COLOR_FILA[e.fila]];
 
       for (let r = 0; r < filas.length; r++) {
         const fila = filas[r];
@@ -204,6 +216,7 @@ class RenderizadorLienzo {
     }
   }
 
+  /** Ovni bonus: elipse con cúpula y patas */
   _dibujarOvni(ovni) {
     const ctx = this.ctx;
     const { x, y, w, h } = ovni;
@@ -222,6 +235,7 @@ class RenderizadorLienzo {
     ctx.restore();
   }
 
+  /** Proyectiles: verdes los del jugador y rojos los de los enemigos */
   _dibujarProyectiles(proyectiles) {
     const ctx = this.ctx;
     for (const b of proyectiles) {
@@ -232,6 +246,7 @@ class RenderizadorLienzo {
     }
   }
 
+  /** Potenciadores: recuadro de color con su inicial (E, R o V) */
   _dibujarPotenciadores(potenciadores) {
     const ctx = this.ctx;
     const letras = { escudo: 'E', rafaga: 'R', vida: 'V' };
@@ -244,7 +259,7 @@ class RenderizadorLienzo {
       ctx.globalAlpha = 0.9;
       ctx.fillRect(p.x, p.y, p.w, p.h);
       ctx.globalAlpha = 1;
-      ctx.fillStyle = 'hsl(265 45% 6%)';
+      ctx.fillStyle = this._colores.fondo;
       ctx.font = 'bold 12px ui-monospace, monospace';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
@@ -253,6 +268,7 @@ class RenderizadorLienzo {
     }
   }
 
+  /** Nave: casco, cañón y cabina (con parpadeo y anillo de escudo) */
   _dibujarNave(nave) {
     const ctx = this.ctx;
     const { x, y, w, h } = nave;
@@ -301,6 +317,7 @@ class RenderizadorLienzo {
     ctx.restore();
   }
 
+  /** Explosiones: partículas que se desvanecen según avanza el efecto */
   _dibujarEfectos(efectos) {
     const ctx = this.ctx;
     const colores = {
